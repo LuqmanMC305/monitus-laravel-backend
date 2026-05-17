@@ -167,6 +167,7 @@ class AlertController extends Controller
 
         // Prepare the data payload (READY TO FOLLOW CAP PROTOCOL)
         $extraData = [
+            'status' => 'NEW_ALERT',
             'latitude'   => (string)$alert->latitude,  // Matches Flutter key
             'longitude'  => (string)$alert->longitude, // Matches Flutter key
             'radius'     => (string)$alert->radius,
