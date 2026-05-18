@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Community;
 use App\Models\MobileUser;
+use App\Models\AppUser;
+use Illuminate\Support\Facades\App;
 
 class CommunityController extends Controller
 {
@@ -54,6 +56,53 @@ class CommunityController extends Controller
 
 
     }
+
+    /*
+    public function approveResident(Request $request)
+    {
+        $request->validate([
+            'mobile_user_id' => 'required|integer',
+            'community_id'   => 'required|integer',
+        ]);
+
+        // 1. Locate the targeted mobile profile
+        $mobileUser = MobileUser::find($request->mobile_user_id);
+        if (!$mobileUser) {
+            return response()->json(['message' => 'Resident profile not found.'], 404);
+        }
+
+        // 2. Update the pivot status from 'pending' to 'approved'
+        $mobileUser->communities()->updateExistingPivot($request->community_id, [
+            'status' => 'approved'
+        ]);
+
+        // 3. Fire the real-time Firebase Cloud Messaging hook to the specific user
+        try {
+            // Fetch the corresponding system User record to obtain their unique token
+           $appUser = AppUser::where('app_user_id', $mobileUser->app_user_id)->first();
+            
+            if ($appUser && !empty($appUser->fcm_token)) {
+                // Send a targeted notification to update their specific app layout cache
+                $this->fcmService->sendEmergencyAlert(
+                    [$appUser->fcm_token], // Sends strictly to this user's token array
+                    "Community Update",
+                    "Your request to join the community has been approved!",
+                    [
+                        'type' => 'COMMUNITY_STATUS_UPDATE',
+                        'community_id' => (string)$request->community_id,
+                        'status' => 'approved'
+                    ]
+                );
+            }
+        } catch (\Exception $e) {
+            info("FCM Community Approval broadcast failed safely: " . $e->getMessage());
+        }
+
+        return response()->json(['message' => 'Resident approved and notified successfully.']);
+    }
+    */
+
+
 }
 
 
