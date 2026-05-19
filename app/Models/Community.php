@@ -18,6 +18,7 @@ class Community extends Model
         'community_name',
         'telegram_group_id',
         'community_description',
+        'telegram_link',
         'community_location',
     ];
 

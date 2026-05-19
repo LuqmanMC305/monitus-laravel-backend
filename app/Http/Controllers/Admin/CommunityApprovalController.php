@@ -4,8 +4,14 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\MobileUser;
+use App\Services\FCMService;
 use Illuminate\Http\Request;
 
+/*
+
+WEB DASHBOARD
+
+*/
 class CommunityApprovalController extends Controller
 {
     // This function shows the "Community Approvals" page on your dashboard
@@ -26,7 +32,7 @@ class CommunityApprovalController extends Controller
     }
 
     // This function runs when you click the "Approve" button on the website
-    public function approve(int $userId, int $communityId)
+    public function approve(int $userId, int $communityId, FCMService $fcmService)
     {
         $user = MobileUser::findOrFail($userId);
         
@@ -34,6 +40,29 @@ class CommunityApprovalController extends Controller
         $user->communities()->updateExistingPivot($communityId, [
             'status' => 'approved'
         ]);
+
+        // Fire real-time FCM to specific user
+        try
+        {
+            $appUser = AppUser::where('app_user_id', $user->app_user_id)->first();
+
+            if ($appUser && !empty($appUser->fcm_token)) {
+                $fcmService->sendEmergencyAlert(
+                    [$appUser->fcm_token],
+                    "Community Update",
+                    "Your request to join the community has been approved!",
+                    [
+                        'type'         => 'COMMUNITY_STATUS_UPDATE',
+                        'community_id' => (string)$communityId,
+                        'status'       => 'approved'
+                    ]
+                );
+            }
+        } 
+        catch (\Exception $e)
+        {
+            info("FCM Community Approval broadcast failed safely: " . $e->getMessage());
+        }
 
         return back()->with('success', 'User approved for the community!');
     }
@@ -46,6 +75,20 @@ class CommunityApprovalController extends Controller
         $user->communities()->detach($communityId);
 
         return back()->with('success', 'Membership request rejected and removed.');
+    }
+
+    // displays form view created
+    public function create()
+    {
+        return view('admin.create-community');
+    }
+
+    // This will handle saving the data when the admin clicks submit later
+    public function store(Request $request)
+    {
+        // Later on, you will add validation and Community::create([...]) here
+        return redirect()->route('admin.community-approvals.index')
+            ->with('success', 'Community created successfully!');
     }
 
 
