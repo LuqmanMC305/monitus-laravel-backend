@@ -36,6 +36,9 @@ Route::middleware([
     Route::post('/broadcast/{communityID}', [AlertController::class, 'broadcastToCommunity'])->name('community.broadcast');
     // Create Community
    Route::get('/admin/communities/create', [CommunityApprovalController::class, 'create'])->name('admin.create-community');
+   // Store Community
+   Route::post('/admin/communities', [CommunityApprovalController::class, 'store']) ->name('admin.communities.store');
+   
     
 
     Route::middleware(['auth:sanctum', 'verified'])->group(function () {

@@ -87,7 +87,7 @@ class CommunityApprovalController extends Controller
     public function store(Request $request)
     {
         // Later on, you will add validation and Community::create([...]) here
-        return redirect()->route('admin.community-approvals.index')
+        return redirect()->route('admin.community-approvals')
             ->with('success', 'Community created successfully!');
     }
 
