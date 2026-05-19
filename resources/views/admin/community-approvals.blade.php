@@ -18,6 +18,11 @@
                 
                 <h3 class="text-lg font-medium text-gray-900 mb-4">Pending Requests</h3>
 
+                <!-- Add community section will be on create-community.blade -->
+                <a href="{{ route('admin.communities.create') }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-wider hover:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:border-indigo-900 focus:ring focus:ring-indigo-300 disabled:opacity-25 transition">
+                    ➕ Create New Community
+                </a>
+
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead>
                         <tr>

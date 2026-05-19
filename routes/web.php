@@ -5,6 +5,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\IncidentMapController;
 use App\Http\Controllers\Api\AlertController;
 use App\Http\Controllers\Admin\CommunityApprovalController;
+use App\Http\Controllers\Admin\CommunityController;
+
 
 // Redirect to login instead of welcome page
 Route::redirect('/', '/register');
@@ -32,6 +34,9 @@ Route::middleware([
     Route::get('/admin/manage-alerts', [IncidentMapController::class, 'manage'])->name('admin.manage-alerts');
     // Broadcast to Community 
     Route::post('/broadcast/{communityID}', [AlertController::class, 'broadcastToCommunity'])->name('community.broadcast');
+    // Create Community
+   Route::get('/admin/communities/create', [CommunityController::class, 'create'])->name('admin.communities.create');
+    
 
     Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     // Page View

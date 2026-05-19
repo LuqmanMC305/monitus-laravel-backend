@@ -56,7 +56,6 @@ class CommunityController extends Controller
 
 
     }
-
     /*
     public function approveResident(Request $request)
     {
