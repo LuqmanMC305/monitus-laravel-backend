@@ -45,11 +45,10 @@ class CommunityApprovalController extends Controller
         // Fire real-time FCM to specific user
         try
         {
-            $appUser = AppUser::where('app_user_id', $user->app_user_id)->first();
 
-            if ($appUser && !empty($appUser->fcm_token)) {
+            if (!empty($user->fcm_token)) {
                 $fcmService->sendEmergencyAlert(
-                    [$appUser->fcm_token],
+                    [$user->fcm_token],
                     "Community Update",
                     "Your request to join the community has been approved!",
                     [
