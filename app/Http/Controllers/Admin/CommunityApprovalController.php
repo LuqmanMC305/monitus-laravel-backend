@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\MobileUser;
 use App\Services\FCMService;
 use Illuminate\Http\Request;
+use App\Models\AppUser;
 
 /*
 
