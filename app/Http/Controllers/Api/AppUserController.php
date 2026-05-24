@@ -5,38 +5,57 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\AppUser;
+use App\Models\MobileUser;
 use Illuminate\Http\Request;
 use  Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 
 class AppUserController extends Controller
 {
-    public function register(Request $request) 
+    public function register(Request $request)
     {
-        // Validate the input
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:app_users,app_user_email',
-            'password' => 'required|string|min:8',
+        //  Fallback to app_user_id if user_id is missing, and sanitize literal "null" strings
+        $rawUserId = $request->input('user_id') ?? $request->input('app_user_id');
+        
+        if (empty($rawUserId) || $rawUserId === 'null') {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'A valid numeric user identity is required for sync.'
+            ], 400);
+        }
+
+        // Explicitly merge the cleaned integer back so validation succeeds
+        $request->merge(['user_id' => (int) $rawUserId]);
+
+        $validated = $request->validate([
+            'user_id'   => 'required|integer|exists:app_users,app_user_id',
+            'device_id' => 'required|string',
+            'fcm_token' => 'required|string',
+            'latitude'  => 'required|numeric|between:-90,90',
+            'longitude' => 'required|numeric|between:-180,180',
         ]);
 
-        if ($validator->fails()) return response()->json($validator->errors(), 422);
+        Log::info("Background Location Sync Triggered!", $request->all());
 
-        // Create the AppUser (Hash the password!)
-        // Get the validated data as an array
-        $data = $validator->validated();
-    
-        $user = AppUser::create([
-            'app_user_name' => $data['name'],
-            'app_user_email' =>  $data['email'],
-            'app_user_password' => Hash::make($data['password']), // Password Encryption
-        ]);
+        $user = MobileUser::updateOrCreate(
+            ['device_id' => $validated['device_id']], 
+            [
+                'app_user_id'      => $validated['user_id'],
+                'fcm_token'        => $validated['fcm_token'], 
+                'last_location'    => DB::raw("ST_GeogFromText('SRID=4326;POINT({$validated['longitude']} {$validated['latitude']})')"),
+                'last_location_at' => now(), 
+            ]
+        );
 
-        // 3. Return the app_user_id to Flutter 
         return response()->json([
-            'message' => 'Registration successful',
-            'app_user_id' => $user->app_user_id
+            'status' => 'success',
+            'message' => 'User location synchronized successfully.',
+            'data' => [
+                'id' => $user->mobile_user_id,
+                'updated_at' => now()->toDateTimeString()
+            ]
         ], 201);
     }
    
@@ -73,8 +92,8 @@ class AppUserController extends Controller
             'message' => 'Login successful',
             'access_token' => $token, 
             'token_type' => 'Bearer',
-            'app_user_id' => $user->app_user_id, // ID 20
-            'mobile_user_id' => $mobileUser ? $mobileUser->mobile_user_id : null, // ID 7
+            'app_user_id' => (int) $user->app_user_id, // ID 20
+            'mobile_user_id' => $mobileUser ? (int) $mobileUser->mobile_user_id : null, // ID 7
             'name' => $user->app_user_name
         ], 200);
 
