@@ -22,14 +22,15 @@ class CommunityController extends Controller
     {
         // 1. Validate the incoming JSON request packet payload data
         $request->validate([
-            'community_id' => 'required|exists:communities,community_id'
+            'community_id' => 'required|exists:communities,community_id',
+            'user_id'      => 'required|integer'
         ]);
 
         $appUser = $request->user(); 
         $communityId = $request->community_id;
 
         // 1. Hop from AppUser  MobileUser 
-        $mobileUser = MobileUser::where('app_user_id', $appUser->app_user_id)->first();
+        $mobileUser = MobileUser::where('app_user_id', $request->user_id)->first();
 
         if (!$mobileUser) {
         return response()->json(['message' => 'Mobile profile not found'], 404);
