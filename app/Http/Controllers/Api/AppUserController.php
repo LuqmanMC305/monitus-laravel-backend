@@ -2,100 +2,95 @@
 
 namespace App\Http\Controllers\Api;
 
-
 use App\Http\Controllers\Controller;
 use App\Models\AppUser;
 use App\Models\MobileUser;
 use Illuminate\Http\Request;
-use  Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
-
+use Illuminate\Support\Facades\DB; 
 
 class AppUserController extends Controller
 {
-    public function register(Request $request)
+    /**
+     * Handle the initial creation of a standard mobile citizen account.
+     */
+    public function register(Request $request) 
     {
-        //  Fallback to app_user_id if user_id is missing, and sanitize literal "null" strings
-        $rawUserId = $request->input('user_id') ?? $request->input('app_user_id');
-        
-        if (empty($rawUserId) || $rawUserId === 'null') {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'A valid numeric user identity is required for sync.'
-            ], 400);
-        }
-
-        // Explicitly merge the cleaned integer back so validation succeeds
-        $request->merge(['user_id' => (int) $rawUserId]);
-
-        $validated = $request->validate([
-            'user_id'   => 'required|integer|exists:app_users,app_user_id',
-            'device_id' => 'required|string',
-            'fcm_token' => 'required|string',
-            'latitude'  => 'required|numeric|between:-90,90',
-            'longitude' => 'required|numeric|between:-180,180',
+        // Validate the incoming text input from Flutter
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:app_users,app_user_email',
+            'password' => 'required|string|min:8',
         ]);
 
-        Log::info("Background Location Sync Triggered!", $request->all());
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
 
-        $user = MobileUser::updateOrCreate(
-            ['device_id' => $validated['device_id']], 
-            [
-                'app_user_id'      => $validated['user_id'],
-                'fcm_token'        => $validated['fcm_token'], 
-                'last_location'    => DB::raw("ST_GeogFromText('SRID=4326;POINT({$validated['longitude']} {$validated['latitude']})')"),
-                'last_location_at' => now(), 
-            ]
-        );
+        $data = $validator->validated();
+    
+        //  FIX 2: Restored actual user generation so accounts can actually be created!
+        $user = AppUser::create([
+            'app_user_name' => $data['name'],
+            'app_user_email' =>  $data['email'],
+            'app_user_password' => Hash::make($data['password']), // Secure Password Encryption
+        ]);
 
+        // Return the clean app_user_id right back to your RegistrationService screen
         return response()->json([
-            'status' => 'success',
-            'message' => 'User location synchronized successfully.',
-            'data' => [
-                'id' => $user->mobile_user_id,
-                'updated_at' => now()->toDateTimeString()
-            ]
+            'message' => 'Registration successful',
+            'app_user_id' => (int) $user->app_user_id
         ], 201);
     }
    
+    /**
+     * Authenticate session credentials and establish secure hardware pivot linkage.
+     */
     public function login(Request $request)
     {
-        // Verify credentials
-        $request->validate
-        ([
+        $request->validate([
             'email' => 'required|email',
             'password' => 'required',
         ]);
 
-        // Verify the user exists and the hashed password matches
+        // Verify the user profile exists
         $user = AppUser::where('app_user_email', $request->email)->first();
 
-        if (!$user || !Hash::check($request->password, $user->app_user_password)) 
-        {
-            return response()->json
-            ([
+        if (!$user || !Hash::check($request->password, $user->app_user_password)) {
+            return response()->json([
                 'message' => 'Invalid login credentials'
             ], 401);
         }
 
-        // Create a new token for this session
+        // Create a secure Sanctum token session string
         $token = $user->createToken('mobile-app-token')->plainTextToken;
 
-        // Fetch the Mobile User ID (The missing link for your pivot table)
-        // This finds ID 7 for Egal (app_user_id 20)
-        $mobileUser = \App\Models\MobileUser::where('app_user_id', $user->app_user_id)->first();
+        // Fetch the Mobile User hardware row lookup
+        $mobileUser = MobileUser::where('app_user_id', $user->app_user_id)->first();
 
-        // Return the app_user_id so the phone can save it
-        return response()->json
-        ([
+        // FIX 3: Dynamic fallback generation! If this account has no device row yet, 
+        // create a safe database entry on the fly so 'mobile_user_id' is NEVER null again.
+        if (!$mobileUser) {
+            $mobileUser = MobileUser::create([
+                'app_user_id' => $user->app_user_id,
+                'device_id' => 'initial_login_placeholder_' . $user->app_user_id,
+                'fcm_token' => '',
+                // Provide default geometric coordinates so PostGIS queries run perfectly
+                'last_location' => DB::raw("ST_GeogFromText('SRID=4326;POINT(100.3036 5.3763)')"),
+                'last_location_at' => now(),
+            ]);
+        }
+
+        // Return the clean unified response payload contract back to Postman & Flutter
+        return response()->json([
             'message' => 'Login successful',
             'access_token' => $token, 
             'token_type' => 'Bearer',
-            'app_user_id' => (int) $user->app_user_id, // ID 20
-            'mobile_user_id' => $mobileUser ? (int) $mobileUser->mobile_user_id : null, // ID 7
+            'app_user_id' => (int) $user->app_user_id, 
+            'mobile_user_id' => (int) $mobileUser->mobile_user_id, // 🟢 Guaranteed Integer!
             'name' => $user->app_user_name
         ], 200);
-
     }
 }
