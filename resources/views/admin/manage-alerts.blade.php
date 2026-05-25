@@ -53,8 +53,21 @@
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-500">
-                                    {{ round($alert->latitude, 4) }}, {{ round($alert->longitude, 4) }}
-                                    <div class="text-xs italic">Radius: {{ $alert->radius }}m</div>
+                                    @if($alert->area_type === 'radius')
+                                        <span class="font-medium text-gray-700">📍 {{ round($alert->latitude, 4) }}, {{ round($alert->longitude, 4) }}</span>
+                                        <div class="text-xs text-blue-600 font-semibold italic">Radius: {{ $alert->radius }}m</div>
+                                    @else
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 mb-1">
+                                            📐 Polygon Shape
+                                        </span>
+                                        <div class="text-xs text-gray-400 italic">
+                                            @if(!empty($alert->danger_zone_coordinates))
+                                                {{ count($alert->danger_zone_coordinates) }} boundary vertices recorded
+                                            @else
+                                                No boundary coordinates defined
+                                            @endif
+                                        </div>
+                                    @endif
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-500">
                                     {{ $alert->created_at->diffForHumans() }}
