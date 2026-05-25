@@ -36,13 +36,12 @@ Route::post('/app-login', [AppUserController::class, 'login']);
 // Allow mobile users join communities
 Route::middleware('auth:sanctum')->group(function () {
     // This connects your Flutter 'joinCommunity' call to the logic
-    //Route::post('/communities/join', [CommunityController::class, 'join'])->name('api.communities.join');
+    Route::post('/communities/join', [CommunityController::class, 'join'])->name('api.communities.join');
 
     // Fetch list of communities
     Route::get('/communities', [CommunityController::class, 'index']);
 });
 
-Route::post('/communities/join', [CommunityController::class, 'join'])->name('api.communities.join');
 
 // Test Handshake
 Route::get('/test-handshake', function (App\Services\FCMService $service) {

@@ -64,7 +64,8 @@ class CommunityApprovalController extends Controller
             info("FCM Community Approval broadcast failed safely: " . $e->getMessage());
         }
 
-        return back()->with('success', 'User approved for the community!');
+        $userName = $user->appUser->app_user_name;
+        return back()->with('success', "$userName approved for the community!");
     }
 
     public function reject(int $userId, int $communityId)
