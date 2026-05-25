@@ -1,45 +1,84 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Incident Command Centre (Click on the Map to Compose Alerts)') }}
+            {{ __('Incident Command Centre (Select Draw Mode to Compose Alerts)') }}
         </h2>
     </x-slot>
 
     <div class="py-12" 
         x-data="{ 
         open: false, 
+        area_type: 'radius',
         lat: '', 
         lng: '', 
         radius: 1000,
+        polygon_coords: [],
+        alert_category: 'flood',
+        category_icon: '🌊',
         showSuccess: false,
         showError: false,
         errorMessage: '',
         notifiedCount: 0 
         }"
-        @open-modal.window="open = true; lat = $event.detail.lat; lng = $event.detail.lng"
+        @open-modal.window="
+            open = true; 
+            area_type = $event.detail.area_type;
+            lat = $event.detail.lat || ''; 
+            lng = $event.detail.lng || ''; 
+            radius = $event.detail.radius || 1000;
+            polygon_coords = $event.detail.polygon_coords || [];
+        "
         @alert-sent.window="showSuccess = true; notifiedCount = $event.detail.count; open = false"
         @alert-failed.window="showError = true; errorMessage = $event.detail.message">
 
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
                 <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-6">
-                    <div id="map" style="height: 600px; width: 100%; border-radius: 8px; z-index: 1;"></div> <!-- Map Container -->
+                    <div id="map" style="height: 600px; width: 100%; border-radius: 8px; z-index: 1;"></div> 
                 </div>
+
                 <div>
-                    <!-- Alert Table History -->
                     <h3 class="text-center text-lg font-bold mt-5">Recent Alerts</h3>
                     <table class="min-w-full divide-y divide-gray-200 mt-6">
                         <thead>
-                            <tr>
-                                <th>Title</th>
-                                <th>Severity</th>
-                                <th>Time</th>
+                            <tr class="bg-gray-50 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                <th class="px-6 py-3">Title</th>
+                                <th class="px-6 py-3">Type / Category</th>
+                                <th class="px-6 py-3">Spatial Area Boundary</th>
+                                <th class="px-6 py-3">Severity</th>
+                                <th class="px-6 py-3">Time</th>
+                                <th class="px-6 py-3"></th>
                             </tr>
                         </thead>
-                        <tbody id="alert-history-table">
+                        <tbody id="alert-history-table" class="bg-white divide-y divide-gray-200">
                             @foreach($alerts as $alert)
-                            <tr class="border-b hover:bg-gray-50">
-                                <td class="px-6 py-4">{{ $alert->title }}</td>
-                                <td class="px-6 py-4">
+                            <tr class="hover:bg-gray-50 transition">
+                                <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ $alert->title }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-500">
+                                    <span class="inline-flex items-center space-x-1">
+                                        <span>{{ $alert->category_icon ?? '📢' }}</span>
+                                        <span class="capitalize font-medium">{{ $alert->alert_category ?? 'General' }}</span>
+                                    </span>
+                                </td>
+                                
+                                <td class="px-6 py-4 text-sm text-gray-500">
+                                    @if(($alert->area_type ?? 'radius') === 'radius')
+                                        <span class="font-medium text-gray-700">📍 {{ round($alert->latitude, 4) }}, {{ round($alert->longitude, 4) }}</span>
+                                        <div class="text-xs text-blue-600 font-semibold italic">Radius: {{ $alert->radius }}m</div>
+                                    @else
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 mb-1">
+                                            📐 Custom Polygon
+                                        </span>
+                                        <div class="text-xs text-gray-400 italic">
+                                            @if(!empty($alert->danger_zone_coordinates))
+                                                {{ count($alert->danger_zone_coordinates) }} vertices recorded
+                                            @else
+                                                No coordinates defined
+                                            @endif
+                                        </div>
+                                    @endif
+                                </td>
+
+                                <td class="px-6 py-4 text-sm">
                                     @php
                                         $badgeColour = match(strtolower($alert->severity))
                                         {
@@ -53,13 +92,21 @@
                                         {{ $alert->severity }}
                                     </span>
                                 </td>
-                                <td class="px-6 py-4">{{ $alert->created_at->diffForHumans()}}</td> 
-                                <td class="px-6 py-4 text-right">
-                                    <button
-                                        onclick="focusMap({{ $alert->latitude }}, {{ $alert->longitude }}, '{{ addslashes($alert->title) }}')"
-                                        class="bg-blue-600 hover:bg-blue-800 text-white text-xs py-1 px-3 rounded shadow-sm transition">
-                                        Locate
-                                    </button>
+                                <td class="px-6 py-4 text-sm text-gray-500">{{ $alert->created_at->diffForHumans()}}</td> 
+                                <td class="px-6 py-4 text-sm text-right">
+                                    @if(($alert->area_type ?? 'radius') === 'radius')
+                                        <button
+                                            onclick="focusMap({{ $alert->latitude }}, {{ $alert->longitude }}, 'radius', null, '{{ addslashes($alert->title) }}')"
+                                            class="bg-blue-600 hover:bg-blue-800 text-white text-xs py-1 px-3 rounded shadow-sm transition">
+                                            Locate
+                                        </button>
+                                    @else
+                                        <button
+                                            onclick="focusMap(null, null, 'polygon', {{ json_encode($alert->danger_zone_coordinates) }}, '{{ addslashes($alert->title) }}')"
+                                            class="bg-purple-600 hover:bg-purple-800 text-white text-xs py-1 px-3 rounded shadow-sm transition">
+                                            Locate
+                                        </button>
+                                    @endif
                                 </td>
                             </tr>
                             @endforeach
@@ -100,7 +147,6 @@
                     </form>
                 </div>
 
-            <!-- Broadcast Model Pop-Up for Alert Fill-in Form -->
             <div x-show="open" 
                 class="fixed inset-0 z-[9999] overflow-y-auto" 
                 style="display: none;"
@@ -112,20 +158,40 @@
                     <div class="fixed inset-0 bg-gray-500 opacity-75"></div>
 
                     <div class="bg-white rounded-lg overflow-hidden shadow-xl transform transition-all sm:max-w-lg sm:w-full p-6 relative z-10">
-                        <h3 class="text-lg font-medium text-gray-900 mb-4">Broadcast New Alert</h3>
+                        <h3 class="text-lg font-medium text-gray-900 mb-4 flex items-center justify-between">
+                            <span>Broadcast New Alert</span>
+                            <span class="text-xs font-bold uppercase px-2 py-0.5 rounded" :class="area_type === 'radius' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'" x-text="area_type"></span>
+                        </h3>
                         
                         <div class="space-y-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Alert Title</label>
-                                <input type="text" id="modal_title" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500" placeholder="e.g., Road Accident">
+                                <input type="text" id="modal_title" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500" placeholder="e.g., Severe Flash Flooding">
                             </div>
 
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Instructions</label>
-                                <textarea id="modal_instruction" rows="3" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500" placeholder="e.g., Use alternative routes..."></textarea>
+                                <textarea id="modal_instruction" rows="3" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500" placeholder="e.g., Evacuate to higher ground immediately..."></textarea>
                             </div>
 
+                            <!-- Alert Category & Emoji section -->
                             <div>
+                                <label class="block text-sm font-medium text-gray-700">Alert Classification Category</label>
+                                <select id="modal_category" x-model="alert_category" @change="
+                                    const emojiMap = { flood: '🌊', weather: '⚡', fire: '🔥', health: '🚨', landslide: '⛰️', general: '📢' };
+                                    category_icon = emojiMap[alert_category] || '📢';
+                                " class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                                    <option value="flood">Flood Hazard (🌊)</option>
+                                    <option value="weather">Extreme Weather (⚡)</option>
+                                    <option value="fire">Infrastructure / Fire (🔥)</option>
+                                    <option value="health">Medical / Emergency (🚨)</option>
+                                    <option value="landslide">Landslide / Geospatial (⛰️)</option>
+                                    <option value="general">General Broadcast (📢)</option>
+                                </select>
+                            </div>
+
+                            <!-- Conditional Visibility for the Radius Slider -->
+                            <div x-show="area_type === 'radius'">
                                 <label class="block text-sm font-medium text-gray-700">
                                     Impact Radius: <span x-text="radius"></span>m
                                 </label>
@@ -136,24 +202,32 @@
                                     class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-red-600">
                             </div>
 
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Severity Level</label>
-                                <select id="modal_severity" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-                                    <option value="LOW">Low</option>
-                                    <option value="MEDIUM" selected>Medium</option>
-                                    <option value="HIGH">High</option>
-                                </select>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Severity Level</label>
+                                    <select id="modal_severity" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                                        <option value="LOW">Low</option>
+                                        <option value="MEDIUM" selected>Medium</option>
+                                        <option value="HIGH">High</option>
+                                    </select>
+                                </div>
+                                <div class="flex items-end justify-center pb-2 text-2xl" x-text="category_icon"></div>
                             </div>
 
                             <div class="text-xs text-gray-500 italic">
-                                Target Coordinates: <span x-text="lat"></span>, <span x-text="lng"></span>
+                                <template x-if="area_type === 'radius'">
+                                    <span>Target Coordinates: <span x-text="lat"></span>, <span x-text="lng"></span></span>
+                                </template>
+                                <template x-if="area_type === 'polygon'">
+                                    <span>Captured Vector Boundary: <span x-text="polygon_coords.length"></span> vertices recorded</span>
+                                </template>
                             </div>
                         </div>
 
                         <div class="mt-6 flex justify-end space-x-3">
-                            <button @click="open = false" type="button" class="bg-gray-200 px-4 py-2 rounded-md text-gray-700 hover:bg-gray-300">Cancel</button>
+                            <button @click="clearPendingDrawings(); open = false" type="button" class="bg-gray-200 px-4 py-2 rounded-md text-gray-700 hover:bg-gray-300">Cancel</button>
 
-                            <button @click="sendAlert(lat, lng, radius)"
+                            <button @click="sendAlert(area_type, lat, lng, radius, polygon_coords, alert_category, category_icon)"
                                 type="button" 
                                 class="bg-red-600 px-4 py-2 rounded-md text-white hover:bg-red-700">
                                 Confirm & Broadcast
@@ -162,7 +236,7 @@
                     </div>
                 </div>
             </div>
-            <!-- Success Toast (Pop-Up) -->
+
             <div x-show="showSuccess" 
                  x-transition 
                  x-init="$watch('showSuccess', value => { if(value) setTimeout(() => showSuccess = false, 5000) })"
@@ -173,11 +247,10 @@
                 </svg>
                 <div>
                     <p class="font-bold">Broadcast Successful!</p>
-                    <p class="text-sm">Reached <span x-text="notifiedCount"></span> active users in the zone.</p>
+                    <p class="text-sm">Notified target spatial network vectors successfully.</p>
                 </div>
             </div>
             
-            <!-- Failure Toast (Pop-Up) -->
             <div x-show="showError" 
                 x-transition 
                 x-init="$watch('showError', value => { if(value) setTimeout(() => showError = false, 5000) })"
@@ -193,250 +266,259 @@
             </div>
         </div>
 
-    <!-- Leaflet Assets --> 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    <!-- Control Geocoder Assets --> 
     <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
     <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 
+    <!-- Leaflet Draw Plugin -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+
     <script>
-        // 1. Initialise the map centered on Penang
-        const lat = 5.4164;
-        const lng = 100.3301;
+        // Initialize Core Map View Coordinates (Penang Island Base Cluster)
+        const baseLat = 5.4164;
+        const baseLng = 100.3301;
         const zoomVal = 13; 
 
-        var map = L.map('map').setView([lat, lng], zoomVal);
-        window.pendingMarker = null;
-        window.pendingCircle = null;
-
+        var map = L.map('map').setView([baseLat, baseLng], zoomVal);
+        
+        // Drawing Feature State Elements
+        window.drawnItems = new L.FeatureGroup();
+        map.addLayer(window.drawnItems);
+        
+        window.pendingLayer = null;
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '© OpenStreetMap'
         }).addTo(map);
 
-        //  Initialise Historical Alert Rendering from DB onto Map
+        // 5. UPDATED: Historical Map Layer Rendering (Handles Circle and Polygons)
         @foreach($alerts as $alert)
             (function() {
-                const hLat = {{ $alert->latitude }};
-                const hLng = {{ $alert->longitude }};
-                const hTitle = "{{ addslashes($alert->title) }}";
-                const hSeverity = "{{ $alert->severity }}";
-                const hColour = getSeverityColour(hSeverity); // Calls your helper function
+                const title = "{{ addslashes($alert->title) }}";
+                const severity = "{{ $alert->severity }}";
+                const color = getSeverityColour(severity);
+                const icon = "{{ $alert->category_icon ?? '📢' }}";
+                const cat = "{{ $alert->alert_category ?? 'General' }}";
+                const areaType = "{{ $alert->area_type ?? 'radius' }}";
 
-                L.circle([hLat, hLng], {
-                    color: hColour,
-                    fillColor: hColour,
-                    fillOpacity: 0.4,
-                    radius: {{ $alert->radius ?? 1000 }}
-                })
-                .addTo(map)
-                .bindPopup(`
-                    <div style="font-family: sans-serif;">
-                        <b style="font-size: 14px;">${hTitle}</b><br>
-                        <span style="
-                            display: inline-block; 
-                            margin-top: 5px;
-                            padding: 2px 8px; 
-                            border-radius: 12px; 
-                            background-color: ${hColour}; 
-                            color: white; 
-                            font-size: 10px; 
-                            font-weight: bold;
-                            text-transform: uppercase;">
-                            Severity:
-                            ${hSeverity}
-                        </span>
-                    </div>
-                `);
+                let layer;
+
+                if (areaType === 'radius') {
+                    layer = L.circle([{{ $alert->latitude ?? 0.0 }}, {{ $alert->longitude ?? 0.0 }}], {
+                        color: color, fillColor: color, fillOpacity: 0.35, radius: {{ $alert->radius ?? 1000 }}
+                    });
+                } else {
+                    const rawCoords = {!! json_encode($alert->danger_zone_coordinates) !!};
+                    if (rawCoords && rawCoords.length > 0) {
+                        layer = L.polygon(rawCoords, {
+                            color: color, fillColor: color, fillOpacity: 0.35
+                        });
+                    }
+                }
+
+                if (layer) {
+                    layer.addTo(map).bindPopup(`
+                        <div style="font-family: sans-serif; min-width:140px;">
+                            <b style="font-size: 14px;">${icon} ${title}</b><br>
+                            <span style="display:inline-block; margin-top:5px; padding:2px 8px; border-radius:12px; background-color:${color}; color:white; font-size:10px; font-weight:bold; text-transform:uppercase;">
+                                ${cat} - ${severity}
+                            </span>
+                        </div>
+                    `);
+                }
             })();
         @endforeach
 
-        // Initialise Search Bar 
-        var geocoder = L.Control.geocoder({
-            defaultMarkGeocode: false
-        })
-        .on('markgeocode', function(e) {
-            var bbox = e.geocode.bbox;
-            var poly = L.polygon([
-            bbox.getSouthEast(),
-            bbox.getNorthEast(),
-            bbox.getNorthWest(),
-            bbox.getSouthWest()
-            ]);
-            map.fitBounds(poly.getBounds()); // Zoom into the searched area
-        })
-        .addTo(map);
+        // 6. NEW: Leaflet.draw Control Panel Interface Integration Configuration
+        var drawControl = new L.Control.Draw({
+            edit: { featureGroup: window.drawnItems, remove: false, edit: false },
+            draw: {
+                polygon: { allowIntersection: false, showArea: true, shapeOptions: { color: '#4b5563' } },
+                circle: { shapeOptions: { color: '#4b5563' } },
+                marker: false, polyline: false, rectangle: false, circlemarker: false
+            }
+        });
+        map.addControl(drawControl);
 
-        // 2. Click to Alert Logic
-        map.on('click', function(e){
-        // 1. Manage Map Visuals
-        if (window.pendingMarker) map.removeLayer(window.pendingMarker);
-        if (window.pendingCircle) map.removeLayer(window.pendingCircle);
+        // Capture Completed Vectors Event Stream
+        map.on(L.Draw.Event.CREATED, function (e) {
+            clearPendingDrawings();
 
-        // Grabs current value from Alpine.js slider
-        const alpineElement = document.querySelector('[x-data]');
+            var type = e.layerType;
+            window.pendingLayer = e.layer;
+            window.drawnItems.addLayer(window.pendingLayer);
 
-        // Add a default value of 1000, ensure radius is not NaN
-        const currentRadius = Alpine.$data(alpineElement).radius || 1000;
+            // 🖥️ DEBUG LINE 1: See what Leaflet natively identifies the shape as
+            console.log("=== 1. Leaflet Draw Event Triggered ===");
+            console.log("Native Leaflet Layer Type:", type);
 
-        window.pendingMarker = L.marker(e.latlng).addTo(map);
-        window.pendingCircle = L.circle(e.latlng, {
-            color: '#667b99', // Grey slate colour for "Pending" status
-            fillColor: '#94a3b8',
-            fillOpacity: 0.4,
-            radius: parseFloat(currentRadius)
-        }).addTo(map);
+            let mappedAreaType = (type === 'circle') ? 'radius' : 'polygon';
 
-        // 2. Open the Modal using the Event Dispatcher 
-        window.dispatchEvent(new CustomEvent('open-modal', { 
-            detail: { lat: e.latlng.lat, lng: e.latlng.lng } 
-            }));
+            console.log("Mapped Area Type for Laravel:", mappedAreaType);
+
+            let modalDetails = { area_type: type };
+
+            if (type === 'circle') {
+                var center = window.pendingLayer.getLatLng();
+                modalDetails.lat = center.lat;
+                modalDetails.lng = center.lng;
+                modalDetails.radius = Math.round(window.pendingLayer.getRadius());
+
+                // 🖥️ DEBUG LINE 2: Verify the extracted circle values are real numbers
+                console.log("Extracted Circle Values:", { lat: modalDetails.lat, lng: modalDetails.lng, radius: modalDetails.radius });
+
+            } else if (type === 'polygon') {
+                var latlngs = window.pendingLayer.getLatLngs()[0];
+                // Map array parameters down to simple structure matches for Laravel controller
+                modalDetails.polygon_coords = latlngs.map(ll => [ll.lat, ll.lng]);
+
+                // 🖥️ DEBUG LINE 3: Verify the extracted polygon vertices array matrix
+                console.log("Extracted Polygon Vertices:", modalDetails.polygon_coords);
+            }
+
+            // 🖥️ DEBUG LINE 4: Inspect the final data structure bundle forwarded to Alpine.js
+            console.log("Dispatched Modal Details Payload Object:", modalDetails);
+            console.log("=======================================");
+
+            // Fire structural event dispatch update loop to open Alpine pop-up form UI
+            window.dispatchEvent(new CustomEvent('open-modal', { detail: modalDetails }));
         });
 
-        // Actual Broadcast Function
-        function sendAlert(lat, lng, radius) {
+        function clearPendingDrawings() {
+            if (window.pendingLayer) {
+                window.drawnItems.removeLayer(window.pendingLayer);
+                window.pendingLayer = null;
+            }
+        }
 
-            // Capture New Alert Details
+        // Search Bar Setup
+        L.Control.geocoder({ defaultMarkGeocode: false })
+            .on('markgeocode', function(e) {
+                map.fitBounds(L.polygon([
+                    e.geocode.bbox.getSouthEast(), e.geocode.bbox.getNorthEast(),
+                    e.geocode.bbox.getNorthWest(), e.geocode.bbox.getSouthWest()
+                ]).getBounds());
+            }).addTo(map);
+
+        // 7. UPDATED: Multi-Format Dynamic Axios Broadcast Packet Payload Sender
+        function sendAlert(areaType, lat, lng, radius, polygonCoords, category, icon) {
             const freshTitle = document.getElementById('modal_title').value;
             const freshInstruction = document.getElementById('modal_instruction').value;
             const freshSeverity = document.getElementById('modal_severity').value;
 
-            axios.post('/api/send-alert', {
+            // 🖥️ DEBUG LINE 5: Look at the arguments arriving from the Alpine modal action context
+            console.log("=== 2. sendAlert Action Triggered ===");
+            console.log("Arguments received from Alpine form context:", { areaType, lat, lng, radius, polygonCoords, category, icon });
+            console.log(`lat: ${lat}`);
+
+            // 🟢 REFACTOR: Accept both 'radius' or 'circle' to protect the data parsing matrix
+            const isCircular = (areaType === 'radius' || areaType === 'circle');
+
+            // Build the payload mapping configuration object explicit reference container
+            const payload = {
                 title: freshTitle,
                 instruction: freshInstruction,
-                severity:freshSeverity,
-                latitude: lat,
-                longitude: lng,
-                radius: radius
-            })
-            .then(response => {
-                // Change colour from "Pending Grey" to severity colour
-                if (typeof pendingCircle !== 'undefined' && pendingCircle) {
-                    const circleColor = getSeverityColour(freshSeverity);
+                severity: freshSeverity,
+
+                area_type: isCircular ? 'radius' : 'polygon',
+
+                alert_category: category,
+                category_icon: icon,
+
+                latitude: isCircular ? parseFloat(lat) : null,
+                longitude:  isCircular ? parseFloat(lng) : null,
+                radius: isCircular ? parseInt(radius) : null,
+
+                danger_zone_coordinates: areaType === 'polygon' ? polygonCoords : null
+            };
+
+
+            // 🖥️ DEBUG LINE 6: This is the ultimate truth. Check if latitude/longitude are STILL null here!
+            console.log("Final Sent Axios Packet Payload Data Array Matrix:", payload);
+            console.log("=========================================");
+
+            axios.post('/api/send-alert', payload)
+                .then(response => {
+                    if (window.pendingLayer) {
+                        const finalColor = getSeverityColour(freshSeverity);
+                        window.pendingLayer.setStyle({ color: finalColor, fillColor: finalColor });
+                        window.pendingLayer.bindPopup(`<b>${icon} ${freshTitle}</b><br><span style="background-color:${finalColor}; color:white; padding:2px 8px; border-radius:12px; font-size:10px; font-weight:bold;">${freshSeverity}</span>`);
+                        window.pendingLayer = null; // Detach pointer safeties
+                    }
+
+                    // Push new history row trace dynamically into list table view object
+                    const tableBody = document.getElementById('alert-history-table');
+                    const rowColor = getSeverityColour(freshSeverity);
                     
-                    pendingCircle.setStyle({
-                        color: circleColor,
-                        fillColor: circleColor
-                    });
+                    let areaString = areaType === 'radius' 
+                        ? `📍 ${parseFloat(lat).toFixed(4)}, ${parseFloat(lng).toFixed(4)}<div class="text-xs text-blue-600 font-semibold italic">Radius: ${radius}m</div>`
+                        : `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 mb-1">📐 Custom Polygon</span><div class="text-xs text-gray-400 italic">${polygonCoords.length} vertices recorded</div>`;
 
-                    pendingCircle.bindPopup(`
-                        <b>${freshTitle}</b><br>
-                        <span style="background-color: ${getSeverityColour(freshSeverity)}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: bold;">
-                            ${freshSeverity}
-                        </span>
-                    `);
-
-                    // Release the "pending" status so they aren't deleted on next click
-                    window.pendingCircle = null;
-                    window.pendingMarker = null;
-                }
-                // Get the table body by the ID that just created
-                const tableBody = document.getElementById('alert-history-table');
-
-
-                /* Prepare the new row HTML
-                   Note: We use "Just now" because the server-side diffForHumans hasn't processed this row yet.
-                */
-                const colour = getSeverityColour(freshSeverity);
-
-                const newRow = `
+                    const newRow = `
                         <tr class="border-b">
-                            <td class="px-6 py-4">${freshTitle}</td>
-                            <td class="px-6 py-4">
-                                <span class="px-2.5 py-0.5 rounded-full text-white text-xs font-bold uppercase tracking-wider" style="background-color: ${colour}">
-                                    ${freshSeverity}
-                                </span>
+                            <td class="px-6 py-4 text-sm font-medium text-gray-900">${freshTitle}</td>
+                            <td class="px-6 py-4 text-sm text-gray-500">${icon} <span class="capitalize font-medium">${category}</span></td>
+                            <td class="px-6 py-4 text-sm text-gray-500">${areaString}</td>
+                            <td class="px-6 py-4 text-sm"><span class="px-2.5 py-0.5 rounded-full text-white text-xs font-bold uppercase tracking-wider" style="background-color:${rowColor}">${freshSeverity}</span></td>
+                            <td class="px-6 py-4 text-sm text-gray-500">Just now</td>
+                            <td class="px-6 py-4 text-sm text-right">
+                                <button onclick="location.reload();" class="bg-gray-100 text-gray-700 hover:bg-gray-200 text-xs py-1 px-3 rounded shadow-sm transition">🔄 Refresh</button>
                             </td>
-                            <td class="px-6 py-4">Just now</td>
-                            <td class="px-6 py-4">
-                                <button 
-                                    onclick="focusMap(${lat}, ${lng}, '${freshTitle}')"
-                                    class="bg-blue-600 hover:bg-blue-800 text-white text-xs py-1 px-3 rounded shadow-sm transition">
-                                    Locate
-                                </button>
-                            </td>
-                        </tr>
-                    `;
+                        </tr>`;
 
-                // Insert the row at the top (afterbegin)
-                tableBody.insertAdjacentHTML('afterbegin', newRow);
+                    tableBody.insertAdjacentHTML('afterbegin', newRow);
+                    if (tableBody.children.length > 10) tableBody.lastElementChild.remove();
 
-                // Ensure it limits to only 10 rows
-                if (tableBody.children.length > 10) {
-                    tableBody.lastElementChild.remove(); // Removes the absolute last row in the body
-                }
-                
-                // Update Alpine.js state for Toast
-                const alpineData = Alpine.$data(document.querySelector('[x-data]')); // Get Alpine.js data object
+                    const alpineData = Alpine.$data(document.querySelector('[x-data]'));
+                    alpineData.notifiedCount = response.data.notified_count || 0;
+                    alpineData.showSuccess = true;
 
-                // Feed server response into Toast
-                alpineData.notifiedCount = response.data.notified_count; 
-                alpineData.showSuccess = true;
+                    // Delay the page reload for 3 seconds so the user can read the success message
+                    setTimeout(() => {
+                        location.reload();
+                    }, 3000); // 3000 milliseconds = 3 seconds
 
-                // DISPATCH SUCCESS EVENT
-                window.dispatchEvent(new CustomEvent('alert-sent', { 
-                    detail: { count: response.data.notified_count } 
-                }));
-
-                // Clean up: Clear the inputs for the next click
-                document.getElementById('modal_title').value = '';
-                document.getElementById('modal_instruction').value = '';
+                    window.dispatchEvent(new CustomEvent('alert-sent', { detail: { count: response.data.notified_count } }));
+                    document.getElementById('modal_title').value = '';
+                    document.getElementById('modal_instruction').value = '';
                 })
-            .catch(error => {
-                console.error("The alert could not be saved:", error);
-
-                window.dispatchEvent(new CustomEvent('alert-failed', { 
-                    detail: { 
-                        message: error.response?.data?.message || "Internal Server Error. Please try again." 
-                    } 
-                }));
-
-                // Get Alpine.Js data object
-                const alpineData = Alpine.$data(document.querySelector('[x-data]'));
-
-                // Set Error Details
-                alpineData.errorMessage = error.response?.data?.message || "Internal Server Error. Please try again.";
-                alpineData.showError = true;
-
-                // Re-open the modal so the admin doesn't lose their text
-                alpineData.open = true;
-            });
+                .catch(error => {
+                    console.error("The alert could not be saved:", error);
+                    const msg = error.response?.data?.message || "Internal Server Error. Please try again.";
+                    window.dispatchEvent(new CustomEvent('alert-failed', { detail: { message: msg } }));
+                    
+                    const alpineData = Alpine.$data(document.querySelector('[x-data]'));
+                    alpineData.errorMessage = msg;
+                    alpineData.showError = true;
+                    alpineData.open = true;
+                });
         }
         
-        // Focuses on Map When Click the Alert Button Inside Table
-        window.focusMap = function(lat, lng, titleVal){
-            console.log("Locate button clicked!");
-
-            if (!map) {
-                console.error("The map variable is not defined!");
-                return;
+        // Focuses and Flies smoothly into Map Vectors when Triggered via table lookups
+        window.focusMap = function(lat, lng, mode, polyCoords, titleVal){
+            if (!map) return;
+            
+            if (mode === 'radius') {
+                map.flyTo([lat, lng], 15, { animate: true, duration: 1.2 });
+                L.popup().setLatLng([lat, lng]).setContent(`<b>Incident Area:</b> ${titleVal}`).openOn(map);
+            } else if (mode === 'polygon' && polyCoords) {
+                const bounds = L.polygon(polyCoords).getBounds();
+                map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15, animate: true, duration: 1.2 });
+                L.popup().setLatLng(bounds.getCenter()).setContent(`<b>Polygon Zone:</b> ${titleVal}`).openOn(map);
             }
-            // Creates a smooth zooming animation (.flyto)
-            map.flyTo([lat, lng], 16,{
-                animate:true,
-                duration: 1.5 // in seconds
-            });
-
-            // Temporary marker or popup to show where it is exactly
-            L.popup()
-                .setLatLng([lat, lng])
-                .setContent('<b style="color: #2563eb;">Incident:</b> ' + titleVal)
-                .openOn(map);
-                
         }
 
         function getSeverityColour(severity){
             switch(severity.toLowerCase()){
-                case 'high': return '#ff0000'; // Red
-                case 'medium': return '#ff8000'; // Orange
-                case 'low': return '#facc15'; // Yellow
-                default: return '#3b82f6'; // Blue
+                case 'high': return '#ff0000';
+                case 'medium': return '#ff8000';
+                case 'low': return '#facc15';
+                default: return '#3b82f6';
             }
-
         }
- 
     </script>
 </x-app-layout>

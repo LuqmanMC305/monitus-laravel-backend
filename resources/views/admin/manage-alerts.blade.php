@@ -55,7 +55,7 @@
                                 <td class="px-6 py-4 text-sm text-gray-500">
                                     @if($alert->area_type === 'radius')
                                         <span class="font-medium text-gray-700">📍 {{ round($alert->latitude, 4) }}, {{ round($alert->longitude, 4) }}</span>
-                                        <div class="text-xs text-blue-600 font-semibold italic">Radius: {{ $alert->radius }}m</div>
+                                        <div class="text-xs text-blue-600 translate-x-7 font-semibold italic">Radius: {{ $alert->radius }}m</div>
                                     @else
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 mb-1">
                                             📐 Polygon Shape
