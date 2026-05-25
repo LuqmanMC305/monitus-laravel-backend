@@ -20,7 +20,14 @@ class Alert extends Model
     // Acts as a security guard to protect its attributes
     protected $fillable = [
         'admin_id', 'title', 'instruction', 'status', 
-        'severity', 'latitude', 'longitude', 'radius'
+        'severity', 'latitude', 'longitude', 'radius',
+        'area_type', 'danger_zone_coordinates', 'alert_category',
+        'category_icon',  
+    ];
+
+    protected $casts = [
+        // Converts PHP arrays to JSON strings on save, and JSON strings to arrays on read!
+        'danger_zone_coordinates' => 'array', 
     ];
 
     /**
