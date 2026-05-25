@@ -113,7 +113,7 @@ class AlertController extends Controller
                         // Use helper function 'sendDirectAlert'
                         $this->telegramService->sendDirectAlert($user->telegram_chat_id, $alert);
                     } catch(\Exception $e){
-                        error("Telegram Direct Fail. User: {$user->mobile_user_id}, ChatID: {$user->telegram_chat_id}. Error: " . $e->getMessage());
+                        Log::error("Telegram Direct Fail. User: {$user->mobile_user_id}, ChatID: {$user->telegram_chat_id}. Error: " . $e->getMessage());
                     }
                 }
         }
@@ -161,6 +161,9 @@ class AlertController extends Controller
 
         // Extract Tokers from Notifier Service
         $tokens = $affectedUsers->pluck('fcm_token')->filter()->toArray();
+
+        Log::info('AFFECTED USERS', $affectedUsers->toArray());
+    
 
         // Call the Notifier Service (Pass the dynamic data)
         $fcmservice = app(FCMService::class);
