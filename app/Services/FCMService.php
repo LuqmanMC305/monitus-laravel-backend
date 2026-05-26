@@ -29,7 +29,12 @@ class FCMService
                          'channel_id' => 'high_importance_channel', // CRITICAL: Matches your test
                     ],       
                 ])
-                ->withData(array_merge(['alert_type' => 'emergency'], $extraData)) // $extraData = latitude, longitude, radius, alert_type
+                // If 'alert_type' is already in $extraData, we just pass it straight through.
+                // If you want to keep 'emergency' as a separate channel routing key for Flutter, 
+                // you can add a brand new key like 'message_purpose' => 'emergency'.
+                ->withData(array_merge([
+                    'click_action' => 'FLUTTER_NOTIFICATION_CLICK', // Helps Flutter open the app on tap
+                    ], $extraData)) 
                 ->toToken($token);
 
             $messaging->send($message);

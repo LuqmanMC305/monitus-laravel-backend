@@ -149,13 +149,13 @@ class AlertController extends Controller
 
                 // 2. Query users matching the geographic bounding shape
                 $affectedUsers = MobileUser::whereRaw(
-                    "ST_Contains(ST_GeomFromText(?, 4326)::geography, last_location::geography)",
+                    "ST_Contains(ST_GeomFromText(?, 4326)::geometry, last_location::geometry)",
                     [$wktPolygon]
                 )->where('last_location_at', '>=', now()->subMinutes(30))->get();
 
                 // 3. Query communities matching the geographic bounding shape
                 $affectedCommunities = Community::whereRaw(
-                    "ST_Contains(ST_GeomFromText(?, 4326)::geography, community_location::geography)",
+                    "ST_Contains(ST_GeomFromText(?, 4326)::geometry, community_location::geometry)",
                     [$wktPolygon]
                 )->get();
             }
