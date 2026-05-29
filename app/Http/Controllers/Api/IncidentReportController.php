@@ -6,7 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\IncidentReport;
 use App\Models\Alert;
 use App\Models\MobileUser;
-use App\Services\FCMService; // 🟢 Direct access to your notification broadcaster
+use App\Services\FCMService; 
+use Illuminate\Support\Facades\Auth;// 
 use Illuminate\Support\Facades\Http;
 
 class IncidentReportController extends Controller
@@ -66,7 +67,7 @@ class IncidentReportController extends Controller
 
         // 2. Automatically generate an official broadcast record in the alerts table
         $alert = Alert::create([
-            'admin_id' => auth()->id() ?? 1, // Fallback to main admin ID account context
+            'admin_id' => Auth::id(), // Fallback to main admin ID account context
             'title' => '⚠️ Community Reported Incident',
             'instruction' => $report->incident_description,
             'severity' => 'MEDIUM', // Default crowd assignment weight
@@ -79,31 +80,9 @@ class IncidentReportController extends Controller
             'alert_category' => 'general'
         ]);
 
-        // 3. Gather active tokens within proximity using your established PostGIS logic
-        $tokens = MobileUser::whereRaw(
-            "ST_DWithin(last_location, ST_MakePoint(?, ?)::geography, ?)",
-            [$alert->longitude, $alert->latitude, $alert->radius]
-        )->pluck('fcm_token')->toArray();
-
-        // 4. Fire the cloud broadcast signals straight to mobile phones!
-        if (!empty($tokens)) {
-            $extraData = [
-                'status' => 'NEW_ALERT',
-                'alert_type' => $alert->severity,
-                'area_type' => $alert->area_type,
-                'latitude' => (string)$alert->latitude,
-                'longitude' => (string)$alert->longitude,
-                'radius' => (string)$alert->radius,
-                'category_icon' => $alert->category_icon,
-            ];
-
-            $this->fcmService->sendEmergencyAlert(
-                $tokens, 
-                $alert->title, 
-                $alert->instruction, 
-                $extraData
-            );
-        }
+        // One call handles everything perfectly!
+        app(AlertDistributionService::class)->broadcast($alert);
+      
 
         return redirect()->back()->with('success', 'Incident approved and broadcasted successfully!');
     }

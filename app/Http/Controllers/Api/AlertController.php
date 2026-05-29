@@ -273,19 +273,4 @@ class AlertController extends Controller
 
     }
 
-    /* FUTURE: For Community Intelligence (Crowdsourcing)
-    public function escalateReport (Request $request, $reportId)
-    {
-
-        // 1. Logic to find the original report (Assume you've created a Report model)
-        // $report = Report::findOrFail($reportId);
-
-        // 2. Reuse the existing store logic by redirecting to it
-        // or manually trigger the broadcast logic here.
-        
-        // For your FYP, it's cleaner to create a private helper function 
-        // called 'executeBroadcast($alert)' that both 'store' and 
-        // 'escalateReport' can call.
-    }
-    */
 }
