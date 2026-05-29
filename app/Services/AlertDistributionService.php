@@ -1,7 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api;
-
+namespace App\Services;
 use App\Http\Controllers\Controller;
 use App\Models\Alert;
 use App\Models\MobileUser;
@@ -13,109 +12,22 @@ use App\Services\FCMService;
 use Illuminate\Support\Facades\Log;
 use App\Services\TelegramService;
 
-use function Laravel\Prompts\error;
-
-class AlertController extends Controller
+class AlertDistributionService
 {
+
+    protected $fcmService;
     protected $telegramService;
 
-    // Inject the Service into the Controller
-    public function __construct(TelegramService $telegramService)
+    // Inject your existing services
+    public function __construct(FCMService $fcmService, TelegramService $telegramService)
     {
+        $this->fcmService = $fcmService;
         $this->telegramService = $telegramService;
     }
 
-    // For Manual Targeting
-    public function broadcastToCommunity(Request $request)
+    public function broadcast(Alert $alert)
     {
-        // Validate the input from your form
-        $validated = $request->validate([
-            'community_id' => 'required|exists:communities,community_id',
-            'message' => 'required|string|max:500',
-        ]);
-
-        // Find community
-        $community = Community::findOrFail($validated['community_id']);
-
-        // Send broadcast
-        try {
-            // Pass raw data to TelegramService
-            $this->telegramService->sendManualAnnouncement(
-                $community->telegram_group_id,
-                $community->community_name,
-                $validated['message']
-            );
-
-            return back()->with('success', 'Announcement sent to ' . $community->community_name);
-
-        } catch (\Exception $e){
-            Log::error("Manual Broadcast Fail: " . $e->getMessage());
-            return back()->with('error', 'Failed to reach Telegram.');
-        }
-           
-    }
-    public function store(Request $request)
-    {
-
-        $notifiedCount = 0;
-
-        // 1. Validate incoming map data
-        $validated = $request->validate([
-
-            // Basic Announcement Info
-            'title'                   => 'required|string|max:255',
-            'instruction'             => 'required|string',
-            'severity'                => 'required|string',
-
-            // Classification & Visuals
-            'alert_category'          => 'required|string',
-            'category_icon'           => 'required|string|max:50',
-
-            // Spatial Control Fields
-            'area_type'               => 'required|string|in:radius,polygon',
-            
-            // Geometric Circle Inputs (Required only if area_type is 'radius')
-            'latitude'                => 'required_if:area_type,radius|nullable|numeric',
-            'longitude'               => 'required_if:area_type,radius|nullable|numeric',
-            'radius'                  => 'required_if:area_type,radius|nullable|integer',
-
-            // Custom Polygon Inputs (Required only if area_type is 'polygon')
-            'danger_zone_coordinates' => 'required_if:area_type,polygon|nullable|array',
-   
-        ]);
-
-            // 2. Save the Alert to DB
-        $alert = Alert::create([
-            'admin_id'                => Auth::id(), 
-            'title'                   => $validated['title'],
-            'instruction'             => $validated['instruction'],
-            'severity'                => $validated['severity'],
-            'status'                  => 'active',
-            //  NEW FIELDS HERE:
-            'area_type'               => $validated['area_type'],
-            'alert_category'          => $validated['alert_category'],
-            'category_icon'           => $validated['category_icon'],
-            
-            // Explicit conditional mapping: keep coordinates safe based on toggle mode
-            'latitude'                => $validated['area_type'] === 'radius' ? $validated['latitude'] : null,
-            'longitude'               => $validated['area_type'] === 'radius' ? $validated['longitude'] : null,
-            'radius'                  => $validated['area_type'] === 'radius' ? $validated['radius'] : null,
-            'danger_zone_coordinates' => $validated['area_type'] === 'polygon' ? $validated['danger_zone_coordinates'] : null,
-        ]);
-
         /*
-            SECTION WHICH CALLS THE ALERT DISTRIBUTION SERVICE FILE
-
-            // 1. Save your official alert to the database (Your existing code)
-            $alert->save();
-
-            // 2. 🚀 Call the service to handle spatial checks, logging, and broadcasts
-            app(\App\Services\AlertDistributionService::class)->broadcast($alert);
-
-            // 3. Return your response (Your existing code)
-            return response()->json(['message' => 'Alert broadcasted successfully'], 201);
-
-        */
 
         // 3. Trigger the Geo-Engine Logic 
         // (Find Users Within Radius of Recently Saved Alert)
@@ -268,23 +180,6 @@ class AlertController extends Controller
         // Print raw alert data on laravel log
         info('Raw Alert Data:', $extraData);
 
-        // 4. Return JSON response to Frontend (Axios Library)
-        return response()->json([
-            'message'                 => 'Alert broadcasted successfully!',
-            'alert_id'                => $alert->alert_id,
-            'area_type'               => $alert->area_type,
-            'alert_category'          => $alert->alert_category,
-            'category_icon'           => $alert->category_icon,
-            'danger_zone_coordinates' => $alert->danger_zone_coordinates,
-            'notified_count'          => $affectedUsers->count(),
-            'tokens_found'            => $tokens,
-            'fcm_success_count'       => $sentCount,
-            'debug_user_ids'          => $affectedUsers->pluck('mobile_user_id'),
-            'search_radius'           => $alert->radius,
-            'latitude'                => $alert->latitude,
-            'longitude'               => $alert->longitude,
-        ]);
-
+        */
     }
-
 }
