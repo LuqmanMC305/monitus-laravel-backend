@@ -27,6 +27,9 @@
                     <x-nav-link href="{{ route('admin.community-approvals') }}" :active="request()->routeIs('admin.community-approvals')">
                         {{ __('Community Approvals') }}
                     </x-nav-link>
+                    <x-nav-link href="{{ route('admin.reports.index') }}" :active="request()->routeIs('admin.reports.index')">
+                        {{ __('Alert Approvals') }}
+                    </x-nav-link>
                 </div>
             </div>
 
