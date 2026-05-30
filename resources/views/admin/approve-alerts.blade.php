@@ -45,7 +45,7 @@
                                                 {{ $report->incident_description }}
                                             </div>
                                             <div class="mt-1 text-xs text-blue-600 font-semibold">
-                                                AI Clean Pass Assurance Score: {{ number_format($report->llm_spam_score, 2) }}
+                                                Gemini 3.5 AI Clean Pass Assurance Score: {{ number_format($report->llm_spam_score, 2) }}
                                             </div>
                                         </td>
 
