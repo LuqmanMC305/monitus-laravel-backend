@@ -55,13 +55,17 @@
                                             </span>
                                         </td>
 
-                                        <td class="px-6 py-4 whitespace-nowrap">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             @if($report->image_path)
-                                                <a href="{{ asset('storage/' . $report->image_path) }}" target="_blank">
-                                                    <img src="{{ asset('storage/' . $report->image_path) }}" alt="Evidence" class="w-16 h-16 object-cover rounded-lg border border-gray-200 hover:scale-105 transition-transform duration-200 shadow-sm">
-                                                </a>
+                                                <div class="relative group flex items-center justify-center w-16 h-16 bg-gray-100 rounded-lg overflow-hidden border border-gray-200 shadow-sm">
+                                                    <a href="{{ asset('storage/' . $report->image_path) }}" target="_blank" title="Click to view full image">
+                                                        <img src="{{ asset('storage/' . $report->image_path) }}"
+                                                            alt="Incident Evidence Image" 
+                                                            class="w-16 h-16 object-cover hover:scale-110 transition-transform duration-200">
+                                                    </a>
+                                                </div>
                                             @else
-                                                <span class="text-xs text-gray-400 italic">{{ __('No Image Provided') }}</span>
+                                                <span class="text-xs text-gray-400 italic">No Media Attached</span>
                                             @endif
                                         </td>
 
