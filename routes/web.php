@@ -6,7 +6,8 @@ use App\Http\Controllers\Admin\IncidentMapController;
 use App\Http\Controllers\Api\AlertController;
 use App\Http\Controllers\Admin\CommunityApprovalController;
 use App\Http\Controllers\Admin\CommunityController;
-use App\Http\Controllers\IncidentReportController;
+use App\Http\Controllers\Api\IncidentReportController;
+
 
 
 // Redirect to login instead of welcome page
@@ -44,6 +45,7 @@ Route::middleware([
    Route::get('/admin/alert-approvals', [IncidentReportController::class, 'index'])
         ->name('admin.reports.index');
 
+    
     Route::post('/admin/alert-approvals/{id}/approve', [IncidentReportController::class, 'approve'])
         ->name('admin.reports.approve');
    

@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\IncidentReport;
 use App\Models\Alert;
@@ -87,5 +88,20 @@ class IncidentReportController extends Controller
       
 
         return redirect()->back()->with('success', 'Incident approved and broadcasted successfully!');
+    }
+
+    /**
+     * Web View for Blade Dashboard: Display clean pending reports
+     */
+    public function index()
+    {
+        // Fetch only reports marked as 'pending' (Clean items that passed the AI check)
+        // Eager load the appUser relationship to display reporter details cleanly
+        $pendingReports = IncidentReport::with('appUser')
+            ->where('status', 'pending')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('admin.approve-alerts', compact('pendingReports'));
     }
 }
