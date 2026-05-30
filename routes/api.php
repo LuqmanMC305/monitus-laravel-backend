@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\CommunityController;
 use App\Models\MobileUser;
 use Kreait\Firebase\Messaging\CloudMessage;
 use Kreait\Firebase\Messaging\Notification;
+use App\Http\Controllers\Api\IncidentReportController;
 use Kreait\Firebase\Messaging\AndroidConfig;
 
 Route::get('/user', function (Request $request) {
@@ -32,6 +33,9 @@ Route::post('/send-alert', [MobileUserController::class, 'sendAlert']);
 // Identity Routes (Account creation and verification)
 Route::post('/app-register', [AppUserController::class, 'register']);
 Route::post('/app-login', [AppUserController::class, 'login']);
+
+// Request Alerts from Mobile Users
+Route::post('/reports', [IncidentReportController::class, 'store']);
 
 // Allow mobile users join communities
 Route::middleware('auth:sanctum')->group(function () {
