@@ -45,13 +45,13 @@
                                                 {{ $report->incident_description }}
                                             </div>
                                             <div class="mt-1 text-xs text-blue-600 font-semibold">
-                                                AI Clean Pass Assurance Score: {{ number_with_precision($report->llm_spam_score, 2) }}
+                                                AI Clean Pass Assurance Score: {{ number_format($report->llm_spam_score, 2) }}
                                             </div>
                                         </td>
 
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <span class="bg-gray-100 text-gray-800 text-xs font-semibold px-2.5 py-0.5 rounded border border-gray-300 block w-max">
-                                                📍 {{ number_with_precision($report->latitude, 4) }}, {{ number_with_precision($report->longitude, 4) }}
+                                                📍 {{ number_format($report->latitude, 4) }}, {{ number_format($report->longitude, 4) }}
                                             </span>
                                         </td>
 
