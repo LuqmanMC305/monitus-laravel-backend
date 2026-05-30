@@ -14,7 +14,6 @@ use App\Services\TelegramService;
 
 class AlertDistributionService
 {
-
     protected $fcmService;
     protected $telegramService;
 
@@ -27,11 +26,7 @@ class AlertDistributionService
 
     public function broadcast(Alert $alert)
     {
-        /*
-
-        // 3. Trigger the Geo-Engine Logic 
-        // (Find Users Within Radius of Recently Saved Alert)
-        // 3. Trigger the Geo-Engine Logic
+        $notifiedCount = 0;
         $affectedUsers = collect();
         $affectedCommunities = collect();
 
@@ -180,6 +175,14 @@ class AlertDistributionService
         // Print raw alert data on laravel log
         info('Raw Alert Data:', $extraData);
 
-        */
+       // Return a raw data array. Let the controllers decide the view/response!
+        return [
+            'notified_users_count' => $affectedUsers->count(),
+            'notified_groups_count' => $notifiedCount,
+            'fcm_success_count'    => $sentCount,
+            'tokens'               => $tokens,
+        ];
+
+
     }
 }

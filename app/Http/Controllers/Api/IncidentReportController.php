@@ -7,7 +7,9 @@ use App\Models\IncidentReport;
 use App\Models\Alert;
 use App\Models\MobileUser;
 use App\Services\FCMService; 
-use Illuminate\Support\Facades\Auth;// 
+use App\Services\AlertDistributionService; 
+use App\Services\LLMValidationService; 
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 
 class IncidentReportController extends Controller
@@ -23,7 +25,7 @@ class IncidentReportController extends Controller
     /**
      * API Endpoint for Flutter: Citizen Submits a Report
      */
-    public function store(Request $request)
+    public function store(Request $request, LLMValidationService $llmService)
     {
         $request->validate([
             'app_user_id' => 'required',
@@ -49,8 +51,8 @@ class IncidentReportController extends Controller
             'status' => 'pending',
         ]);
 
-        // 🧠 OPTIONAL: Call your automated LLM gate check right here!
-        // $this->runLLMSpamCheck($report);
+        // Call automated LLM gate check right here!
+         $llmService->checkSpam($report);
 
         return response()->json(['message' => 'Report received successfully', 'report_id' => $report->id], 201);
     }

@@ -10,7 +10,7 @@ class LLMValidationService
 {
     public function checkSpam(IncidentReport $report): void
     {
-        $apiKey = config('services.llm.key') ?? env('GEMINI_API_KEY');
+        $apiKey = config('services.llm.key') ?: env('GEMINI_API_KEY');
         
         if (!$apiKey) {
             Log::warning("LLM Spam Check bypassed: No API key configured.");
