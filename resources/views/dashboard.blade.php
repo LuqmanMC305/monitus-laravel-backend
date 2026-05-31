@@ -67,46 +67,58 @@
 
                 <div class="lg:col-span-2 bg-white p-5 rounded-xl shadow-sm border border-gray-200 flex flex-col">
                     <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wide mb-4 flex items-center justify-between">
-                        <span>Live AI Triage & Broadcast Stream</span>
+                        <span>System Operations Log Stream</span>
                         <span class="flex items-center space-x-1 text-xs text-green-500 font-semibold bg-green-50 px-2 py-0.5 rounded">
                             <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                            <span>Listening to API</span>
+                            <span>Live Sync Active</span>
                         </span>
                     </h3>
                     
                     <div class="flex-1 overflow-y-auto max-h-[260px] pr-2 space-y-3 font-sans text-sm">
-                        <div class="flex items-start space-x-3 p-3 bg-purple-50/50 rounded-lg border border-purple-100">
-                            <div class="bg-purple-500 text-white p-1.5 rounded-md text-xs font-mono font-bold">AI</div>
-                            <div class="flex-1">
-                                <div class="flex justify-between items-center">
-                                    <span class="font-semibold text-purple-900">Spam Report Terminated</span>
-                                    <span class="text-xs text-gray-400 font-mono">Just Now</span>
+                        @forelse($dashboardStream as $log)
+                            
+                            @if($log['type'] === 'active_alert')
+                                <div class="flex items-start space-x-3 p-3 bg-red-50/50 rounded-lg border border-red-100">
+                                    <div class="bg-red-500 text-white px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wide">Live</div>
+                                    <div class="flex-1">
+                                        <div class="flex justify-between items-center">
+                                            <span class="font-semibold text-red-900">{{ $log['title'] }}</span>
+                                            <span class="text-xs text-gray-400 font-mono">{{ $log['time']->diffForHumans(null, true) }} ago</span>
+                                        </div>
+                                        <p class="text-xs text-red-700 mt-0.5">{{ $log['description'] }}</p>
+                                    </div>
                                 </div>
-                                <p class="text-xs text-purple-700 mt-0.5">Report #38 labeled as keyboard smash gibberish ("test 123"). Confidence: 0.99. Auto-rejected safely.</p>
-                            </div>
-                        </div>
 
-                        <div class="flex items-start space-x-3 p-3 bg-blue-50/50 rounded-lg border border-blue-100">
-                            <div class="bg-blue-500 text-white p-1.5 rounded-md text-xs font-mono font-bold">AI</div>
-                            <div class="flex-1">
-                                <div class="flex justify-between items-center">
-                                    <span class="font-semibold text-blue-900">Valid Incident Captured</span>
-                                    <span class="text-xs text-gray-400 font-mono">3 mins ago</span>
+                            @elseif($log['type'] === 'community_request')
+                                <div class="flex items-start space-x-3 p-3 bg-blue-50/50 rounded-lg border border-blue-100">
+                                    <div class="bg-blue-500 text-white px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wide">User</div>
+                                    <div class="flex-1">
+                                        <div class="flex justify-between items-center">
+                                            <span class="font-semibold text-blue-900">{{ $log['title'] }}</span>
+                                            <span class="text-xs text-gray-400 font-mono">{{ $log['time']->diffForHumans(null, true) }} ago</span>
+                                        </div>
+                                        <p class="text-xs text-blue-700 mt-0.5">{{ $log['description'] }}</p>
+                                    </div>
                                 </div>
-                                <p class="text-xs text-blue-700 mt-0.5">"Fire near Sekolah Kebangsaan" analyzed successfully. Assurance score: 0.98. Sent to Alert Approvals.</p>
-                            </div>
-                        </div>
 
-                        <div class="flex items-start space-x-3 p-3 bg-green-50/50 rounded-lg border border-green-100">
-                            <div class="bg-green-500 text-white p-1.5 rounded-md text-xs"><i class="fa-solid fa-paper-plane"></i>📢</div>
-                            <div class="flex-1">
-                                <div class="flex justify-between items-center">
-                                    <span class="font-semibold text-green-900">Multi-Channel Telegram Broadcast Sent</span>
-                                    <span class="text-xs text-gray-400 font-mono">12 mins ago</span>
+                            @elseif($log['type'] === 'resolved_history')
+                                <div class="flex items-start space-x-3 p-3 bg-green-50/50 rounded-lg border border-green-100">
+                                    <div class="bg-green-500 text-white px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wide">Done</div>
+                                    <div class="flex-1">
+                                        <div class="flex justify-between items-center">
+                                            <span class="font-semibold text-green-900">{{ $log['title'] }}</span>
+                                            <span class="text-xs text-gray-400 font-mono">{{ $log['time']->diffForHumans(null, true) }} ago</span>
+                                        </div>
+                                        <p class="text-xs text-green-700 mt-0.5">{{ $log['description'] }}</p>
+                                    </div>
                                 </div>
-                                <p class="text-xs text-green-700 mt-0.5">Alert ID #14 mirrored cleanly into local community Telegram chat rooms targeting 2 matching local sectors.</p>
+                            @endif
+
+                        @empty
+                            <div class="text-center py-8 text-gray-400 italic text-xs">
+                                No active operational logs to display. System running cleanly.
                             </div>
-                        </div>                       
+                        @endforelse
                     </div>
                 </div>
             </div>

@@ -7,6 +7,7 @@ use App\Models\Alert;
 use Illuminate\Http\Request;
 use App\Services\FCMService;
 use App\Models\Community;
+use App\Models\CommunityUser;
 use App\Models\IncidentReport;
 use Kreait\Laravel\Firebase\Facades\Firebase;
 use Kreait\Firebase\Messaging\CloudMessage;
@@ -130,6 +131,57 @@ class IncidentMapController extends Controller
                 ->count();
         }
 
+        // FOR LOG STREAM
+        // 1. Fetch latest active alerts (Approved but not yet resolved)
+        $activeAlertsLogs = IncidentReport::where('status', 'approved')
+            ->orderBy('created_at', 'desc')
+            ->take(5)
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'type' => 'active_alert',
+                    'title' => 'Active Emergency Broadcast',
+                    'description' => "Live alert active: \"{$item->description}\" near coordinates {$item->latitude}, {$item->longitude}.",
+                    'time' => $item->created_at,
+                ];
+            });
+
+        // 2. Fetch latest pending community join/membership requests
+        $pendingCommunityLogs = CommunityUser::where('status', 'pending')
+            ->orderBy('created_at', 'desc')
+            ->take(5)
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'type' => 'community_request',
+                    'title' => 'Pending Community Access Request',
+                    'description' => "User ID #{$item->user_id} has requested membership access verification approval.",
+                    'time' => $item->created_at,
+                ];
+            });
+
+        // 3. Fetch latest resolved incident history records
+        $resolvedHistoryLogs = IncidentReport::where('status', 'resolved')
+            ->orderBy('created_at', 'desc')
+            ->take(5)
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'type' => 'resolved_history',
+                    'title' => 'Incident Safely Resolved',
+                    'description' => "Emergency report ID #{$item->id} has been marked as fully resolved by the dispatcher.",
+                    'time' => $item->updated_at, // Tracks when it was marked resolved
+                ];
+            });
+
+        // 4. Merge all collections together and sort them completely chronologically
+        $dashboardStream = collect()
+            ->merge($activeAlertsLogs)
+            ->merge($pendingCommunityLogs)
+            ->merge($resolvedHistoryLogs)
+            ->sortByDesc('time')
+            ->take(8); // Limit the scroll pane view container frame to the top 8 recent items
+
         return view('dashboard', compact(
             'activeCount',
             'resolvedCount', 
@@ -140,7 +192,8 @@ class IncidentMapController extends Controller
             'medAlerts',
             'lowAlerts',
             'labels',
-            'data'
+            'data',
+            'dashboardStream'
         ));
 
 
