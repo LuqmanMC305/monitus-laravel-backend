@@ -21,14 +21,45 @@
                     </x-nav-link>
 
                     <x-nav-link href="{{ route('admin.manage-alerts') }}" :active="request()->routeIs('admin.manage-alerts')">
-                        {{ __('Manage Alerts') }}
+                        <div class="flex items-center space-x-2">
+                            <span>{{ __('Manage Alerts') }} </span>
+
+                             <!-- Only render the badge if there are actually pending requests to show -->
+                            @if(isset($activeAlertCount) && $activeAlertCount > 0)
+                                <span class="inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full animate-pulse">
+                                    {{ $activeAlertCount }}
+                                </span>
+                            @endif
+
+                        </div>
+                        
                     </x-nav-link>
                     
                     <x-nav-link href="{{ route('admin.community-approvals') }}" :active="request()->routeIs('admin.community-approvals')">
-                        {{ __('Community Approvals') }}
+                        <div class="flex items-center space-x-2">
+                            <span>{{ __('Community Approvals') }}</span>
+
+                            <!-- Only render the badge if there are actually pending requests to show -->
+                            @if(isset($pendingCommunityCount) && $pendingCommunityCount > 0)
+                                <span class="inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-white bg-blue-500 rounded-full animate-pulse">
+                                    {{ $pendingCommunityCount }}
+                                </span>
+                            @endif
+
+                        </div>
                     </x-nav-link>
+
                     <x-nav-link href="{{ route('admin.reports.index') }}" :active="request()->routeIs('admin.reports.index')">
-                        {{ __('Alert Approvals') }}
+                        <div class="flex items-center space-x-2">
+
+                            <span>{{ __('Alert Approvals') }}</span>
+
+                            @if(isset($pendingAlertCount) && $pendingAlertCount > 0)
+                                <span class="inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full animate-pulse">
+                                    {{ $pendingAlertCount }}
+                                </span>
+                            @endif
+                        </div>
                     </x-nav-link>
                 </div>
             </div>

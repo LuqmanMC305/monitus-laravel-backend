@@ -7,6 +7,7 @@ use App\Models\Alert;
 use Illuminate\Http\Request;
 use App\Services\FCMService;
 use App\Models\Community;
+use App\Models\IncidentReport;
 use Kreait\Laravel\Firebase\Facades\Firebase;
 use Kreait\Firebase\Messaging\CloudMessage;
 
@@ -112,6 +113,23 @@ class IncidentMapController extends Controller
         $medAlerts = Alert::where('severity', 'MEDIUM')->count();
         $lowAlerts = Alert::where('severity', 'LOW')->count();
 
+        // Generate arrays for the last 14 days chronologically
+        $labels = [];
+        $data = [];
+        
+        $maxDays = 13;
+
+        for ($i = $maxDays; $i >= 0; $i--) {
+            $date = now()->subDays($i);
+            // Format label as "30 May" or "31 May"
+            $labels[] = $date->format('d M'); 
+            
+            // Count how many verified alerts were broadcasted on that specific calendar date
+            $data[] = IncidentReport::where('status', 'approved') // or your active broadcast condition
+                ->whereDate('created_at', $date->toDateString())
+                ->count();
+        }
+
         return view('dashboard', compact(
             'activeCount',
             'resolvedCount', 
@@ -120,7 +138,11 @@ class IncidentMapController extends Controller
             'recentAlerts',
             'highAlerts',
             'medAlerts',
-            'lowAlerts'
+            'lowAlerts',
+            'labels',
+            'data'
         ));
+
+
     }
 }

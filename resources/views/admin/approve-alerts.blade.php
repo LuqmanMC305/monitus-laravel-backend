@@ -17,7 +17,7 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                 @if($pendingReports->isEmpty())
                     <div class="text-center py-8 text-gray-500">
-                        <span class="text-4xl block mb-2">🎉</span>
+                        <span class="text-4xl block mb-2">✅</span>
                         {{ __('No pending community reports requiring verification.') }}
                     </div>
                 @else
@@ -45,7 +45,7 @@
                                                 {{ $report->incident_description }}
                                             </div>
                                             <div class="mt-1 text-xs text-blue-600 font-semibold">
-                                                Gemini 3.5 AI Clean Pass Assurance Score: {{ number_format($report->llm_spam_score, 2) }}
+                                                AI Clean Pass Assurance Score: {{ number_format($report->llm_spam_score, 2) }}
                                             </div>
                                         </td>
 
