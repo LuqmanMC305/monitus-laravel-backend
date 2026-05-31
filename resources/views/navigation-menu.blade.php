@@ -41,7 +41,7 @@
 
                             <!-- Only render the badge if there are actually pending requests to show -->
                             @if(isset($pendingCommunityCount) && $pendingCommunityCount > 0)
-                                <span class="inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-white bg-blue-500 rounded-full animate-pulse">
+                                <span class="inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full animate-pulse">
                                     {{ $pendingCommunityCount }}
                                 </span>
                             @endif
