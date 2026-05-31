@@ -109,17 +109,16 @@
                         </div>                       
                     </div>
                 </div>
+            </div>
 
-                 <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 mt-6">
-                            <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wide mb-4 flex items-center justify-between">
-                                <span>Alert Despatch Volume (Last 14 Days)</span>
-                                <span class="text-xs font-normal normal-case text-gray-400">Chronological Trend Monitoring</span>
-                            </h3>
-                            <div class="relative w-full h-[220px]">
-                                <canvas id="trendChart"></canvas>
-                            </div>
+             <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 mt-6">
+                <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wide mb-4 flex items-center justify-between">
+                    <span>Alert Despatch Volume (Last 14 Days)</span>
+                    <span class="text-xs font-normal normal-case text-gray-400">Chronological Trend Monitoring</span>
+                </h3>
+                <div class="relative w-full h-[220px]">
+                    <canvas id="trendChart"></canvas>
                 </div>
-
             </div>
         </div>
     </div>
