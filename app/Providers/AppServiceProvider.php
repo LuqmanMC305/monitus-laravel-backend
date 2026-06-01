@@ -24,7 +24,10 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         // Shares database status counts with your main navigation views seamlessly
-        View::composer(['layouts.app', 'navigation-menu'], function ($view) {
+        View::composer(
+            ['layouts.app', // resources/views/layouts/app.blade.php
+            'navigation-menu', // resources/views/navigation-menu.blade.php
+            ], function ($view) {
             $view->with([
                 // 1. Count pending community membership requests
                 'pendingCommunityCount' => CommunityUser::where('status', 'pending')->count(),

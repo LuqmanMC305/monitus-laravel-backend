@@ -5,7 +5,9 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ config('app.name', 'Laravel') }}</title>
+        <title>{{ __('Monitus Admin Console') }}</title>
+
+        <link rel="icon" type="image/png" href="{{ asset('images/monitus-logo-round.png') }}" alt="Monitus Logo">
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
@@ -41,5 +43,27 @@
         @stack('modals')
 
         @livewireScripts
+
+         <!-- Dynamic Tab Pending Alerts -->
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                // 1. Safely inject three distinct backend metrics as integers
+                const pendingCommunity = {{ $pendingCommunityCount ?? 0 }};
+                const pendingAlerts    = {{ $pendingAlertCount ?? 0 }};
+                const activeAlerts     = {{ $activeAlertCount ?? 0 }};
+                
+                // 2. Sum them up to calculate the global operational action total
+                const totalPendingAlerts = pendingCommunity + pendingAlerts + activeAlerts;
+                
+                // 3. Keep a pristine reference to your branding title string
+                const baseTitle = document.title; 
+
+                // 4. Update the visual tab text layout conditionally
+                if (totalPendingAlerts > 0) {
+                    document.title = `(${totalPendingAlerts}) ${baseTitle}`;
+                }
+            });
+        </script>
     </body>
+
 </html>
