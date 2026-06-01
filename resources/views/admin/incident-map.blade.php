@@ -302,11 +302,20 @@
                 const cat = "{{ $alert->alert_category ?? 'General' }}";
                 const areaType = "{{ $alert->area_type ?? 'radius' }}";
 
+
+                let centralLatLng;
                 let layer;
 
                 if (areaType === 'radius') {
-                    layer = L.circle([{{ $alert->latitude ?? 0.0 }}, {{ $alert->longitude ?? 0.0 }}], {
-                        color: color, fillColor: color, fillOpacity: 0.35, radius: {{ $alert->radius ?? 1000 }}
+                    const lat = {{ $alert->latitude ?? 0.0 }};
+                    const lng = {{ $alert->longitude ?? 0.0 }};
+                    centerLatLng = L.latLng(lat, lng);
+
+                    layer = L.circle(centerLatLng, {
+                          color: color,
+                          fillColor: color, 
+                          fillOpacity: 0.35, 
+                          radius: {{ $alert->radius ?? 1000 }}
                     });
                 } else {
                     const rawCoords = {!! json_encode($alert->danger_zone_coordinates) !!};
@@ -314,20 +323,43 @@
                         layer = L.polygon(rawCoords, {
                             color: color, fillColor: color, fillOpacity: 0.35
                         });
+                        // 🟢 Automatically extracts the perfect centre bound vector of your polygon shape layout
+                        centerLatLng = layer.getBounds().getCenter();
                     }
                 }
 
+                // Render shapes and icons to map layers safely
                 if (layer) {
-                    layer.addTo(map).bindPopup(`
+                    const popupContent = `
                         <div style="font-family: sans-serif; min-width:140px;">
                             <b style="font-size: 14px;">${icon} ${title}</b><br>
                             <span style="display:inline-block; margin-top:5px; padding:2px 8px; border-radius:12px; background-color:${color}; color:white; font-size:10px; font-weight:bold; text-transform:uppercase;">
                                 ${cat} - ${severity}
                             </span>
                         </div>
-                    `);
+                    `;
+
+                    // A. Draw the primary underlying danger boundaries shape zone layer
+                    layer.addTo(map).bindPopup(popupContent);
+
+                    // NEW: Draw the transparent floating text emoji marker right over the center
+                    if (centerLatLng) {
+                        const textIconMarker = L.divIcon({
+                            // Custom CSS styling framework sets the emoji center bounding alignments perfectly
+                            html: `<div style="font-size: 24px; text-shadow: 0 2px 4px rgba(0,0,0,0.25); transform: translate(-2px, -4px);">${icon}</div>`,
+                            className: 'custom-map-emoji-icon', // Clears Leaflet's default white pin background
+                            iconSize: [30, 30],
+                            iconAnchor: [15, 15] // Anchors precise geometric icon center coordinates points
+                        });
+                    
+
+                    // Pin the standalone floating emoji right to the screen coordinate system map workspace
+                    L.marker(centerLatLng, { icon: textIconMarker })
+                    .addTo(map)
+                    .bindPopup(popupContent); // Tapping directly on the emoji fires up the popup too!
                 }
-            })();
+            }
+        })();
         @endforeach
 
         // 6. NEW: Leaflet.draw Control Panel Interface Integration Configuration
