@@ -22,12 +22,11 @@ class DatabaseSeeder extends Seeder
             'email' => 'test@example.com',
         ]);
 
-        /* 🟢 Execute table seeders sequentially to preserve foreign key constraints
+        /*
+         🟢 Only call the single snapshot seeder that handles everything
+         
         $this->call([
-            UserSeeder::class,               // 1. Parent: Populates 'users' table
-            CommunitySeeder::class,          // 2. Parent: Populates 'communities' table
-            AlertSeeder::class,              // 3. Child: Populates 'alerts' table (belongs to users)
-            CommunityBroadcastSeeder::class, // 4. Junction: Links alerts and communities
+            SelectiveDataSnapshotSeeder::class,
         ]);
         */
     }
