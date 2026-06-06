@@ -7,6 +7,7 @@ use App\Models\MobileUser;
 use App\Services\FCMService;
 use Illuminate\Http\Request;
 use App\Models\AppUser;
+use App\Models\CommunityUser;
 
 /*
 
@@ -92,5 +93,15 @@ class CommunityApprovalController extends Controller
             ->with('success', 'Community created successfully!');
     }
 
+    // FOR DEMO PURPOSES ONLY TO DELETE USER 'LUQMAN' (mobile_user_id of 7) FROM COMMUNITY
+    public function delete()
+    {
+       $exists = CommunityUser::where('mobile_user_id', 7)->exists();
+            
+       if (!$exists) return back()->with('error','Record not found.');
 
+       CommunityUser::where('mobile_user_id', 7)->delete();
+            
+      return back()->with('success', 'Community user deleted.');
+    }
 }

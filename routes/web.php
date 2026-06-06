@@ -65,6 +65,9 @@ Route::middleware([
     Route::post('/admin/community-approvals/{user}/{community}/reject', [CommunityApprovalController::class, 'reject'])
         ->name('admin.community-approvals.reject');
 
+    Route::delete( '/admin/community-approvals/delete', [CommunityApprovalController::class, 'delete']
+        )->name('admin.community-approvals.delete');
+
     Route::post('/admin/community-broadcast', [AlertController::class, 'broadcastToCommunity'])
     ->name('admin.community.broadcast');
 });
