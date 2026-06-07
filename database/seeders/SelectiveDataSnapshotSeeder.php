@@ -41,6 +41,7 @@ class SelectiveDataSnapshotSeeder extends Seeder
             $appUser = AppUser::updateOrCreate(
                 ['app_user_email' => 'luqman@gmail.com'],
                 [
+                    'app_user_id' => 36,
                     'app_user_name' => 'Luqman',
                     'app_user_password' => Hash::make('password123'),
                     'created_at' => '2026-05-05 14:45:27',
@@ -54,6 +55,7 @@ class SelectiveDataSnapshotSeeder extends Seeder
             MobileUser::updateOrCreate(
                 ['device_id' => 'BP2A.250605.031.A3'],
                 [
+                    'mobile_user_id' => 7,
                     'fcm_token' => 'fqprYR2pS3aMlS7rzxBfNv:APA91bEHNjOQ6R6f7gsNaCXfXu6zRUdcyjty1lM4brNylS-bIxzt1zw6qgtJdw6v1aUEZJB0Q-vI6VMj_p9SkENFtX08rSBA1kmlTMYkhslaj9KZ8nxMVVk',
                     // Using DB::raw to correctly bind the hex postgis coordinate geometry
                     'last_location' => DB::raw("ST_GeomFromWKB(decode('0101000020E6100000D48D661B6E1359402EAE4C535F811540', 'hex'), 4326)"),
