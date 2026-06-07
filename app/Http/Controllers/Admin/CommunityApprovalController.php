@@ -93,14 +93,14 @@ class CommunityApprovalController extends Controller
             ->with('success', 'Community created successfully!');
     }
 
-    // FOR DEMO PURPOSES ONLY TO DELETE USER 'LUQMAN' (mobile_user_id of 7) FROM COMMUNITY
+    // FOR DEMO PURPOSES ONLY TO DELETE USER 'LUQMAN' (mobile_user_id of 1) FROM COMMUNITY
     public function delete()
     {
-       $exists = CommunityUser::where('mobile_user_id', 7)->exists();
+       $exists = CommunityUser::where('mobile_user_id', 1)->exists();
             
        if (!$exists) return back()->with('error','Record not found.');
 
-       CommunityUser::where('mobile_user_id', 7)->delete();
+       CommunityUser::where('mobile_user_id', 1)->delete();
             
       return back()->with('success', 'Community user deleted.');
     }
