@@ -126,9 +126,15 @@ class IncidentMapController extends Controller
             $labels[] = $date->format('d M'); 
             
             // Count how many verified alerts were broadcasted on that specific calendar date
-            $data[] = IncidentReport::where('status', 'approved') // or your active broadcast condition
+            $approvedAlertCount = IncidentReport::where('status', 'approved') // or your active broadcast condition
                 ->whereDate('created_at', $date->toDateString())
                 ->count();
+
+            // Count how many direct system alerts were broadcasted on this same calendar date
+            $broadcastedAlertsCount = Alert::whereDate('created_at', $date->toDateString())
+                ->count();
+            
+            $data[] = $broadcastedAlertsCount + $approvedAlertCount;
         }
 
         // FOR LOG STREAM
