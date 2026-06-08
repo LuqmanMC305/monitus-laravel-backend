@@ -29,7 +29,7 @@
                 </div>
                 <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 border-l-4 border-purple-500">
                     <div class="text-xs text-gray-400 uppercase font-bold tracking-wider">AI Spam Blocked</div>
-                    <div class="text-2xl font-bold text-purple-600 mt-1">{{ $spamBlockedCount ?? 0 }}</div>
+                    <div class="text-2xl font-bold text-purple-600 mt-1">{{ $rejectedAlertRequests ?? 0 }}</div>
                 </div>
             </div>
 

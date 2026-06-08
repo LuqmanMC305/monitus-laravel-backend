@@ -114,6 +114,9 @@ class IncidentMapController extends Controller
         $medAlerts = Alert::where('severity', 'MEDIUM')->count();
         $lowAlerts = Alert::where('severity', 'LOW')->count();
 
+        // 5. Count Rejected Alert Requests
+        $rejectedAlertRequests = IncidentReport::where('status','rejected')->count();
+
         // Generate arrays for the last 14 days chronologically
         $labels = [];
         $data = [];
@@ -199,6 +202,7 @@ class IncidentMapController extends Controller
             'lowAlerts',
             'labels',
             'data',
+            'rejectedAlertRequests',
             'dashboardStream'
         ));
 
