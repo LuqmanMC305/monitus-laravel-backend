@@ -23,7 +23,6 @@ class LLMValidationService
             'gemini-3.5-flash', 
             'gemini-3.1-flash-lite', 
             'gemini-2.5-flash', 
-            'gemini-2.5-flash-lite'
         ];
 
         $response = null;
@@ -60,17 +59,11 @@ class LLMValidationService
                     break;
                 }
 
-                // If successful (Status 200), break the fallback loop immediately!
-                Log::info('Gemini Status', [
-                    'status' => $response->status(),
-                    'body' => $response->body(),
-                ]);
-
                 // If we get a 503 or any server error, log a warning and let the loop continue to the next model
                 Log::warning("Model {$model} failed with status code: " . $response->status() . ". Trying fallback model...");
 
             } catch (\Exception $e){
-                Log::error("Gemini API Error Response HTTP Status: " . $response->status() . " Body: " . $response->body());
+                Log::error("Network exception encountered for model {$model}: " . $e->getMessage());
             }              
         }
 
