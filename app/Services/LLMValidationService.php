@@ -39,8 +39,8 @@ class LLMValidationService
             try {
                 Log::info("Attempting LLM Spam Check for Report ID {$report->id} using model: {$model}");
 
-                 //  Force 'v1' stable production endpoint paths for Flash variants
-                $url = "https://generativelanguage.googleapis.com/v1/models/{$model}:generateContent?key={$apiKey}";
+               
+                $url = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key={$apiKey}";
 
                 $response = Http::withHeaders(['Content-Type' => 'application/json'])
                     ->post($url, [
